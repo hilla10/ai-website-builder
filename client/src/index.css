@@ -13,3 +13,19 @@
     @apply bg-black;
   }
 }
+
+@utility gradient-button {
+  @apply flex items-center gap-2 text-white px-3 sm:px-6 py-1 sm:py-2 rounded bg-linear-to-br from-indigo-500 to-indigo-600 hover:opacity-90 active:scale-95 transition-all;
+}
+
+@utility project {
+  @apply relative w-72 max-sm:mx-auto cursor-pointer bg-gray-900/60 border border-gray-700 rounded-lg overflow-hidden shadow-md group-hover:shadow-indigo-700/30 hover:border-indigo-800/80 transition-all duration-300;
+}
+
+@utility trash {
+  @apply absolute top-3 right-3 scale-0 group-hover:scale-100 bg-white p-1.5 size-7 rounded text-red-500 text-xl cursor-pointer transition-all;
+}
+
+@utility footer {
+  @apply text-center py-4 text-gray-400 text-sm border-t border-gray-800 mt-24;
+}
