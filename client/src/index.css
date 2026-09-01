@@ -30,6 +30,23 @@
   @apply absolute top-3 right-3 scale-0 group-hover:scale-100 bg-white p-1.5 size-7 rounded text-red-500 text-xl cursor-pointer transition-all;
 }
 
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+
 @utility footer {
   @apply text-center py-4 text-gray-400 text-sm border-t border-gray-800 mt-24;
+}
+
+@keyframes fade-in {
+  0% {
+    opacity: 0;
+  }
+  100% {
+    opacity: 1;
+  }
+}
+
+.animate-fade-in {
+  animation: fade-in 0.8s ease-out;
 }
