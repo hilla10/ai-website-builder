@@ -1,10 +1,16 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { assets } from '../assets/assets';
+import bgGradient from '../assets/bg-gradient-2.png';
+import { authClient } from '@/lib/auth-client';
+import { UserButton } from '@daveyplate/better-auth-ui';
 
 const Navbar = () => {
   const [menuOpen, setMenuOpen] = useState(false);
   const navigate = useNavigate();
+
+  const { data: session } = authClient.useSession();
+
   return (
     <>
       <nav className='z-50 flex items-center justify-between w-full py-4 px-4 md:px-16 lg:px-24 xl:px-32 backdrop-blur border-b text-white border-slate-800'>
@@ -28,11 +34,15 @@ const Navbar = () => {
         </div>
 
         <div className=' flex item-center gap-3'>
-          <button
-            onClick={() => navigate('/auth/signin')}
-            className='px-6 py-1.5 mx-sm:text-sm bg-indigo-600 active:scale-95 hover:bg-indigo-700 transition rounded'>
-            Get started
-          </button>
+          {!session?.user ? (
+            <button
+              onClick={() => navigate('/auth/signin')}
+              className='px-6 py-1.5 mx-sm:text-sm bg-indigo-600 active:scale-95 hover:bg-indigo-700 transition rounded'>
+              Get started
+            </button>
+          ) : (
+            <UserButton size='icon' />
+          )}
 
           <button
             id='open-menu'
@@ -91,7 +101,7 @@ const Navbar = () => {
         </div>
       )}
       <img
-        src='https://raw.githubusercontent.com/prebuiltui/prebuiltui/refs/heads/main/assets/hero/bg-gradient-2.png'
+        src={bgGradient}
         className='absolute inset-0 -z-10 size-full opacity'
         alt=''
       />
