@@ -3,7 +3,7 @@ import 'dotenv/config';
 import { betterAuth } from 'better-auth';
 import { prismaAdapter } from 'better-auth/adapters/prisma';
 
-import prisma from './prisma';
+import prisma from './prisma.js';
 
 const trustedOrigins = process.env.TRUSTED_ORIGINS?.split(',') || [];
 
@@ -15,7 +15,7 @@ export const auth = betterAuth({
   emailAndPassword: {
     enabled: true,
   },
-  
+
   user: {
     deleteUser: { enabled: true },
   },

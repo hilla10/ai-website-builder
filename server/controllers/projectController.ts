@@ -1,6 +1,5 @@
 import { Request, Response } from 'express';
 import prisma from '../lib/prisma.js';
-import { UserScalarFieldEnum } from '../generated/prisma/internal/prismaNamespace';
 import openai from '../configs/openai';
 // controller function to make revision
 
