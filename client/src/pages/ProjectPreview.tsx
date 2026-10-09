@@ -8,6 +8,7 @@ import {
 import type { Project } from '../types';
 import { iframeScript } from '../assets/assets';
 import EditorPanel from '../components/EditorPanel';
+import LoaderSteps from '@/components/LoaderSteps';
 
 export interface ProjectPreviewRef {
   getCode: () => string | undefined;
@@ -119,9 +120,11 @@ const ProjectPreview = forwardRef<ProjectPreviewRef, ProjectPreviewProps>(
               />
             )}
           </>
-        ) : (
-          isGenerating && <div>Loading</div>
-        )}
+        ) : isGenerating ? (
+          <div>
+            <LoaderSteps />
+          </div>
+        ) : null}
       </div>
     );
   },

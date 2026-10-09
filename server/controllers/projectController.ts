@@ -139,14 +139,41 @@ You are an expert web developer.
       ],
     });
 
-    const code = codeGenerationsResponse.choices[0].message.content || '';
+    const cleanGeneratedCode = (code: string) => {
+      return code
+        .replace(/^```html\s*/i, '')
+        .replace(/^```\s*/i, '')
+        .replace(/\s*```$/i, '')
+        .trim();
+    };
+
+    const code = cleanGeneratedCode(
+      codeGenerationsResponse.choices[0].message.content || '',
+    );
+
+    if (!code) {
+      await prisma.conversation.create({
+        data: {
+          role: 'assistant',
+          content:
+            "I'm sorry, but I couldn't generate the updated code. Please try again with a different prompt.",
+          projectId,
+        },
+      });
+      await prisma.user.update({
+        where: { id: userId },
+        data: {
+          credits: {
+            increment: 5,
+          },
+        },
+      });
+      return;
+    }
 
     const version = await prisma.version.create({
       data: {
-        code: code
-          .replace(/```[a-z]*\n?/gi, '')
-          .replace(/```$/g, '')
-          .trim(),
+        code: code,
         description: 'changes made',
         projectId,
       },
@@ -164,10 +191,7 @@ You are an expert web developer.
     await prisma.websiteProject.update({
       where: { id: projectId },
       data: {
-        current_code: code
-          .replace(/```[a-z]*\n?/gi, '')
-          .replace(/```$/g, '')
-          .trim(),
+        current_code: code,
         current_version_index: version.id,
       },
     });
@@ -388,7 +412,7 @@ export const saveProjectCode = async (req: Request, res: Response) => {
       },
     });
 
-    res.status(200).json({ code: project.current_code });
+    res.status(200).json({ code: project.current_code, message: 'Project Saved Successfully.' });
   } catch (error: any) {
     console.error(error);
 

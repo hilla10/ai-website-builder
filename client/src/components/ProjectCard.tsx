@@ -4,12 +4,13 @@ import type { Project } from '../types';
 
 interface ProjectProps {
   project: Project;
+
+  deleteProject: (projectId: string) => void;
 }
 
-const ProjectCard = ({ project }: ProjectProps) => {
+const ProjectCard = ({ project, deleteProject }: ProjectProps) => {
   const navigate = useNavigate();
 
-  const deleteProject = async (projectId: string) => {};
   return (
     <div
       onClick={() => navigate(`/projects/${project.id}`)}

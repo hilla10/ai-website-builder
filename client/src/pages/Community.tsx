@@ -2,27 +2,40 @@ import { useState, useEffect } from 'react';
 import { Loader2Icon } from 'lucide-react';
 import type { Project } from '../types';
 import { useNavigate } from 'react-router-dom';
-import { dummyProjects } from '../assets/assets';
 import Footer from '../components/Footer';
 import CommunityCard from '../components/CommunityCard';
+import api from '@/configs/axios';
+import { toast } from 'sonner';
 
 const Community = () => {
   const [loading, setLoading] = useState(true);
   const [projects, setProjects] = useState<Project[]>([]);
   const navigate = useNavigate();
   const fetchProjects = async () => {
-    setProjects(dummyProjects);
-
-    // Simulate loading
-    setTimeout(() => {
-      setLoading(false);
-    }, 1000);
+    try {
+      const { data } = await api.get('/api/project/published');
+      return data.projects;
+    } catch (error: any) {
+      toast.error(error?.response?.data?.message || error.message);
+      console.log(error);
+    }
   };
 
   useEffect(() => {
-    (async () => {
-      await fetchProjects();
-    })();
+    const loadProject = async () => {
+      try {
+        const project = await fetchProjects();
+
+        setProjects(project);
+      } catch (error: any) {
+        toast.error(error?.response?.data?.message || error.message);
+        console.log(error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadProject();
   }, []);
 
   return (

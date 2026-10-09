@@ -1,5 +1,6 @@
 import { useParams, useNavigate } from 'react-router-dom';
 import { useState, useEffect, useRef } from 'react';
+import { toast } from 'sonner';
 import {
   Loader2Icon,
   MessageSquareIcon,
@@ -15,20 +16,19 @@ import {
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import type { Project } from '../types';
-import {
-  dummyProjects,
-  dummyConversations,
-  dummyVersion,
-} from '../assets/assets';
 import Sidebar from '../components/Sidebar';
 import ProjectPreview, { type ProjectPreviewRef } from './ProjectPreview';
+import api from '@/configs/axios';
+import { authClient } from '@/lib/auth-client';
 
 const Projects = () => {
   const { projectId } = useParams();
   const navigate = useNavigate();
+  const { data: session, isPending } = authClient.useSession();
 
   const [project, setProject] = useState<Project | null>(null);
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [isPublishing, setIsPublishing] = useState(false);
   const [isGenerating, setIsGenerating] = useState(true);
   const [device, setDevice] = useState<'phone' | 'tablet' | 'desktop'>(
     'desktop',
@@ -39,23 +39,28 @@ const Projects = () => {
   const previewRef = useRef<ProjectPreviewRef>(null);
 
   const fetchProject = async () => {
-    setLoading(true);
-    const project = dummyProjects.find((project) => project.id === projectId);
+    const { data } = await api.get(`/api/user/project/${projectId}`);
 
-    setTimeout(() => {
-      if (project) {
-        setProject({
-          ...project,
-          conversation: dummyConversations,
-          versions: dummyVersion,
-        });
-        setLoading(false);
-        setIsGenerating(project.current_code ? false : true);
-      }
-    }, 2000);
+    return data.project;
   };
+  const saveProject = async () => {
+    if (!previewRef.current) return;
+    const code = previewRef.current.getCode();
+    if (!code) return;
+    setIsSaving(true);
 
-  const saveProject = async () => {};
+    try {
+      const { data } = await api.put(`/api/project/save/${projectId}`, {
+        code,
+      });
+      toast.success(data.message);
+    } catch (error: any) {
+      toast.error(error?.response?.data?.message || error.message);
+      console.log(error);
+    } finally {
+      setIsSaving(false);
+    }
+  };
 
   // Download code (index.html)
   const downloadCode = () => {
@@ -75,14 +80,66 @@ const Projects = () => {
     element.click();
   };
 
-  const togglePublish = async () => {};
+  const togglePublish = async () => {
+    setIsPublishing(true);
+    try {
+      const { data } = await api.get(`/api/user/publish-toggle/${projectId}`);
+      toast.success(data.message);
+      setProject((prev) =>
+        prev ? { ...prev, isPublished: data.isPublished } : null,
+      );
+    } catch (error: any) {
+      toast.error(error?.response?.data?.message || error.message);
+      console.log(error);
+    } finally {
+      setIsPublishing(false);
+    }
+  };
 
   useEffect(() => {
-    (async () => {
-      fetchProject();
-    })();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+    if (isPending) return;
+
+    if (!session?.user) {
+      navigate('/');
+      toast('Please login to view your projects');
+      return;
+    }
+    const loadProject = async () => {
+      try {
+        const project = await fetchProject();
+
+        setProject(project);
+        setIsGenerating(!project.current_code);
+      } catch (error: any) {
+        toast.error(error?.response?.data?.message || error.message);
+        console.log(error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadProject();
+  }, [session?.user, isPending, projectId]);
+
+  useEffect(() => {
+    if (!project || project.current_code) return;
+
+    const intervalId = setInterval(async () => {
+      try {
+        const updatedProject = await fetchProject();
+
+        if (updatedProject) {
+          setProject(updatedProject);
+
+          setIsGenerating(!updatedProject.current_code);
+        }
+      } catch (error) {
+        console.error(error);
+      }
+    }, 10000);
+
+    return () => clearInterval(intervalId);
+  }, [project]);
 
   if (loading)
     return (
@@ -93,7 +150,7 @@ const Projects = () => {
       </>
     );
 
-  return project ? (
+  return project && project.id ? (
     <div className='flex flex-col h-screen w-screen bg-gray-900 text-white'>
       {/* Builder navbar */}
       <div className='flex max-sm:flex-col sm:items-center gap-4 px-4 py-2 no-scrollbar'>
@@ -176,13 +233,14 @@ const Projects = () => {
             onClick={togglePublish}
             className='bg-linear-to-br from indigo-700 to-indigo-600 hover:from-indigo-600 hover:to-indigo-500 text-white px-3.5 py-1 flex items-center gap-2 rounded sm:rounded-sm transition-colors'>
             {' '}
-            {project.isPublished ? (
+            {isPublishing ? (
+              <Loader2Icon className='animate-spin' size={16} />
+            ) : project.isPublished ? (
               <EyeOffIcon size={16} />
             ) : (
               <EyeIcon size={16} />
             )}
             {project.isPublished ? 'Unpublish' : 'Publish'}
-            Publish
           </button>
         </div>
       </div>

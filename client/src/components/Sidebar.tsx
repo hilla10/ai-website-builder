@@ -8,6 +8,8 @@ import {
 import type { Message, Project, Version } from '../types';
 import { Link } from 'react-router-dom';
 import React, { useEffect, useRef, useState } from 'react';
+import api from '@/configs/axios';
+import { toast } from 'sonner';
 
 interface SideBarProps {
   isMenuOpen: boolean;
@@ -33,14 +35,68 @@ const Sidebar = ({
     }
   }, [project.conversation.length, isGenerating]);
 
-  const HandleRollBack = async (versionId: string) => {};
+  const fetchProject = async () => {
+    try {
+      const { data } = await api.get(`/api/user/project/${project.id}`);
+      setProject(data.project);
+    } catch (error: any) {
+      toast.error(error.response?.data?.message || error.message);
+      console.log(error.message);
+    }
+  };
+
+  const HandleRollBack = async (versionId: string) => {
+    try {
+      const confirm = window.confirm(
+        'Are you sure you want to rollback this version?',
+      );
+
+      if (!confirm) return;
+      setIsGenerating(true);
+      const { data } = await api.get(
+        `/api/project/rollback/${project.id}/${versionId}`,
+      );
+
+      const { data: result } = await api.get(`/api/user/project/${project.id}`);
+
+      toast.success(data.message);
+      setProject(result.project);
+      setIsGenerating(false);
+    } catch (error: any) {
+      setIsGenerating(false);
+      toast.error(error.response?.data?.message || error.message);
+      console.log(error.message);
+    }
+  };
 
   const handleRevisions = async (e: React.FormEvent) => {
     e.preventDefault();
-    setIsGenerating(true);
-    setTimeout(() => {
+    let interval: number | undefined;
+    try {
+      setIsGenerating(true);
+      interval = setInterval(() => {
+        fetchProject();
+      }, 10000);
+
+      const { data } = await api.post(`/api/project/version/${project.id}`, {
+        message: input,
+      });
+
+      fetchProject();
+      toast.success(data.message);
+      setInput('');
+      clearInterval(interval);
       setIsGenerating(false);
-    }, 3000);
+    } catch (error: any) {
+      setIsGenerating(false);
+      toast.error(
+        error.response?.data?.message ||
+          error.message ||
+          'An error occurred while generating revisions.',
+      );
+      console.log(error.message);
+      clearInterval(interval);
+    }
   };
 
   return (

@@ -1,6 +1,7 @@
 import { Request, Response } from 'express';
 import prisma from '../lib/prisma.js';
 import openai from '../configs/openai.js';
+import Stripe from 'stripe';
 
 // Get User Credits
 export const getUserCredits = async (req: Request, res: Response) => {
@@ -26,7 +27,13 @@ export const createUserProject = async (req: Request, res: Response) => {
   const userId = req.userId;
   let creditsCharged = false;
   try {
-    const { initial_prompt } = req.body;
+    const initial_prompt = req.body.initial_prompt?.trim();
+
+    if (!initial_prompt) {
+      return res.status(400).json({
+        message: 'Initial prompt is required',
+      });
+    }
 
     if (!userId) {
       return res.status(401).json({ message: 'Unauthorized' });
@@ -39,6 +46,12 @@ export const createUserProject = async (req: Request, res: Response) => {
     if (!user) {
       return res.status(404).json({
         message: 'User not found',
+      });
+    }
+
+    if (!initial_prompt || typeof initial_prompt !== 'string') {
+      return res.status(400).json({
+        message: 'Initial prompt is required',
       });
     }
 
@@ -69,10 +82,8 @@ export const createUserProject = async (req: Request, res: Response) => {
       });
 
       if (updatedUser.count === 0) {
-        throw new Error('Insufficient Credits');
+        throw new Error('INSUFFICIENT_CREDITS');
       }
-
-      creditsCharged = true;
 
       const project = await tx.websiteProject.create({
         data: {
@@ -96,11 +107,15 @@ export const createUserProject = async (req: Request, res: Response) => {
       return project;
     });
 
+    creditsCharged = true;
+
     const project = result;
+
+    res.status(201).json({ projectId: project.id });
 
     // Enhance user prompt
     const promptEnhanceResponse = await openai.chat.completions.create({
-      model: 'apodex/apodex-1.1-mini:free:free',
+      model: 'apodex/apodex-1.1-mini:free',
       messages: [
         {
           role: 'system',
@@ -143,7 +158,7 @@ export const createUserProject = async (req: Request, res: Response) => {
 
     // Generate website code
     const codeGenerationResponse = await openai.chat.completions.create({
-      model: 'apodex/apodex-1.1-mini:free:free',
+      model: 'apodex/apodex-1.1-mini:free',
       messages: [
         {
           role: 'system',
@@ -179,15 +194,42 @@ export const createUserProject = async (req: Request, res: Response) => {
       ],
     });
 
-    const code = codeGenerationResponse.choices[0].message.content || '';
+    const cleanGeneratedCode = (code: string) => {
+      return code
+        .replace(/^```html\s*/i, '')
+        .replace(/^```\s*/i, '')
+        .replace(/\s*```$/i, '')
+        .trim();
+    };
+
+    const code = cleanGeneratedCode(
+      codeGenerationResponse.choices[0].message.content || '',
+    );
+
+    if (!code) {
+      await prisma.conversation.create({
+        data: {
+          role: 'assistant',
+          content:
+            "I'm sorry, but I couldn't generate the updated code. Please try again with a different prompt.",
+          projectId: project.id,
+        },
+      });
+      await prisma.user.update({
+        where: { id: userId },
+        data: {
+          credits: {
+            increment: 5,
+          },
+        },
+      });
+      return;
+    }
 
     // Create version for the project
     const version = await prisma.version.create({
       data: {
-        code: code
-          .replace(/```[a-z]*\n?/gi, '')
-          .replace(/```$/g, '')
-          .trim(),
+        code: code,
         description: 'Initial version',
         projectId: project.id,
       },
@@ -207,15 +249,10 @@ export const createUserProject = async (req: Request, res: Response) => {
         id: project.id,
       },
       data: {
-        current_code: code
-          .replace(/```[a-z]*\n?/gi, '')
-          .replace(/```$/g, '')
-          .trim(),
+        current_code: code,
         current_version_index: version.id,
       },
     });
-
-    res.status(201).json({ projectId: project.id });
   } catch (error: any) {
     if (creditsCharged) {
       await prisma.user.update({
@@ -308,17 +345,18 @@ export const togglePublish = async (req: Request, res: Response) => {
       return res.status(404).json({ message: 'Project not found' });
     }
 
-    await prisma.websiteProject.update({
+    const updatedProject = await prisma.websiteProject.update({
       where: { id: projectId },
       data: {
         isPublished: !project.isPublished,
       },
     });
 
-    res.status(200).json({
-      message: project.isPublished
-        ? 'Project Unpublished'
-        : 'Project Published',
+    return res.status(200).json({
+      isPublished: updatedProject.isPublished,
+      message: updatedProject.isPublished
+        ? 'Project Published Successfully'
+        : 'Project Unpublished',
     });
   } catch (error: any) {
     console.error(error);
@@ -329,6 +367,63 @@ export const togglePublish = async (req: Request, res: Response) => {
 // controller function to purchase credits
 export const purchaseCredits = async (req: Request, res: Response) => {
   try {
+    interface Plan {
+      credits: number;
+      amount: number;
+    }
+
+    const plans = {
+      basic: { credits: 100, amount: 5 },
+      pro: { credits: 400, amount: 19 },
+      enterprise: { credits: 1000, amount: 49 },
+    };
+
+    const userId = req.userId;
+    const { planId } = req.body as { planId: keyof typeof plans };
+
+    const origin = req.headers.origin as string;
+
+    const plan: Plan = plans[planId];
+
+    if (!plan) {
+      return res.status(404).json({ message: 'Plan not found' });
+    }
+
+    const transaction = await prisma.transaction.create({
+      data: {
+        userId: userId!,
+        planId: req.body.planId,
+        amount: plan.amount,
+        credits: plan.credits,
+      },
+    });
+
+    const stripe = new Stripe(process.env.STRIPE_SECRET_KEY as string);
+
+    const session = await stripe.checkout.sessions.create({
+      success_url: `${origin}/loading`,
+      cancel_url: `${origin}`,
+      line_items: [
+        {
+          price_data: {
+            currency: 'usd',
+            product_data: {
+              name: `AiWebsiteBuilder - ${plan.credits} credits`,
+            },
+            unit_amount: Math.floor(transaction.amount) * 100,
+          },
+          quantity: 1,
+        },
+      ],
+      mode: 'payment',
+      metadata: {
+        transactionId: transaction.id,
+        appId: 'ai-webiste-builder',
+      },
+      expires_at: Math.floor(Date.now() / 1000) + 30 * 60, // Expires after 30 minutes
+    });
+
+    return res.status(200).json({ payment_link: session.url });
   } catch (error: any) {
     console.error(error);
     res.status(500).json({ message: error.message || 'Internal Server Error' });

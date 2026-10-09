@@ -1,6 +1,9 @@
 import { useState } from 'react';
 import { appPlans } from '../assets/assets';
 import Footer from '../components/Footer';
+import { authClient } from '@/lib/auth-client';
+import api from '@/configs/axios';
+import { toast } from 'sonner';
 
 interface Plan {
   id: string;
@@ -12,9 +15,25 @@ interface Plan {
 }
 
 const Pricing = () => {
+  const { data: session } = authClient.useSession();
   const [plans] = useState<Plan[]>(appPlans);
 
-  const handlePurchase = async (planId: string) => {};
+  const handlePurchase = async (planId: string) => {
+    try {
+      if (!session?.user)
+        return toast('You must be logged in to purchase a credits.');
+      const { data } = await api.post('/api/user/purchase-credits', { planId });
+
+      window.open(data.payment_link, '_self');
+    } catch (error: unknown) {
+      if (error instanceof Error) {
+        toast.error(error.message);
+      } else {
+        toast.error('Failed to start payment.');
+      }
+      console.log(error);
+    }
+  };
 
   return (
     <>
