@@ -285,6 +285,13 @@ export const getUserProject = async (req: Request, res: Response) => {
 
     const { projectId } = req.params;
 
+    if (typeof projectId !== 'string') {
+      return res.status(400).json({
+        success: false,
+        message: 'Invalid project ID',
+      });
+    }
+
     const project = await prisma.websiteProject.findUnique({
       where: {
         id: projectId,
@@ -336,6 +343,13 @@ export const togglePublish = async (req: Request, res: Response) => {
     }
 
     const { projectId } = req.params;
+
+    if (typeof projectId !== 'string') {
+      return res.status(400).json({
+        success: false,
+        message: 'Invalid project ID',
+      });
+    }
 
     const project = await prisma.websiteProject.findUnique({
       where: { id: projectId, userId },

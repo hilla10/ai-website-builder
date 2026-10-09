@@ -9,9 +9,16 @@ export const makeRevision = async (req: Request, res: Response) => {
 
   let creditsCharged = false;
   try {
-    const { projectId } = req.params;
+    const projectId = req.params.projectId;
+
     const { message } = req.body;
 
+    if (typeof projectId !== 'string') {
+      return res.status(400).json({
+        success: false,
+        message: 'Invalid project ID',
+      });
+    }
     if (!userId) {
       return res.status(401).json({ message: 'Unauthorized' });
     }
@@ -238,6 +245,13 @@ export const rollbackToVersion = async (req: Request, res: Response) => {
 
     const { projectId, versionId } = req.params;
 
+    if (typeof projectId !== 'string') {
+      return res.status(400).json({
+        success: false,
+        message: 'Invalid project ID',
+      });
+    }
+
     const project = await prisma.websiteProject.findUnique({
       where: { id: projectId, userId },
       include: { versions: true },
@@ -289,6 +303,13 @@ export const deleteProject = async (req: Request, res: Response) => {
     const userId = req.userId;
     const { projectId } = req.params;
 
+    if (typeof projectId !== 'string') {
+      return res.status(400).json({
+        success: false,
+        message: 'Invalid project ID',
+      });
+    }
+
     if (!userId) {
       return res.status(401).json({ message: 'Unauthorized' });
     }
@@ -313,6 +334,13 @@ export const getProjectPreview = async (req: Request, res: Response) => {
   try {
     const userId = req.userId;
     const { projectId } = req.params;
+
+    if (typeof projectId !== 'string') {
+      return res.status(400).json({
+        success: false,
+        message: 'Invalid project ID',
+      });
+    }
 
     if (!userId) {
       return res.status(401).json({ message: 'Unauthorized' });
@@ -362,6 +390,13 @@ export const getProjectById = async (req: Request, res: Response) => {
   try {
     const { projectId } = req.params;
 
+    if (typeof projectId !== 'string') {
+      return res.status(400).json({
+        success: false,
+        message: 'Invalid project ID',
+      });
+    }
+
     const project = await prisma.websiteProject.findFirst({
       where: { id: projectId },
     });
@@ -388,6 +423,13 @@ export const saveProjectCode = async (req: Request, res: Response) => {
     const { projectId } = req.params;
     const { code } = req.body;
 
+    if (typeof projectId !== 'string') {
+      return res.status(400).json({
+        success: false,
+        message: 'Invalid project ID',
+      });
+    }
+
     if (!userId) {
       return res.status(401).json({ message: 'Unauthorized' });
     }
@@ -412,7 +454,10 @@ export const saveProjectCode = async (req: Request, res: Response) => {
       },
     });
 
-    res.status(200).json({ code: project.current_code, message: 'Project Saved Successfully.' });
+    res.status(200).json({
+      code: project.current_code,
+      message: 'Project Saved Successfully.',
+    });
   } catch (error: any) {
     console.error(error);
 
