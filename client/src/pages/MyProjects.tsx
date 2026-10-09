@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Loader2Icon, PlusIcon, TrashIcon } from 'lucide-react';
+import { Loader2Icon, PlusIcon } from 'lucide-react';
 import type { Project } from '../types';
 import { useNavigate } from 'react-router-dom';
 import Footer from '../components/Footer';

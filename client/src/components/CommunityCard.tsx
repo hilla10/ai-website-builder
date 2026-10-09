@@ -1,4 +1,4 @@
-import { Link, useNavigate } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 import type { Project } from '../types';
 
 interface CommunityProps {
@@ -6,7 +6,7 @@ interface CommunityProps {
 }
 
 const CommunityCard = ({ project }: CommunityProps) => {
-  const navigate = useNavigate();
+  
 
   return (
     <Link
