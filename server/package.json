@@ -6,7 +6,7 @@
   "scripts": {
     "dev": "nodemon --exec tsx server.ts",
     "start": "tsx server.ts",
-    "build": "ts"
+    "build": "prisma generate && tsc --noEmit"
   },
   "keywords": [],
   "author": "",
