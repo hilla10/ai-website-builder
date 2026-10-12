@@ -260,7 +260,13 @@ export const createUserProject = async (req: Request, res: Response) => {
         data: { credits: { increment: 5 } },
       });
     }
+
     console.error(error);
+
+    if (res.headersSent) {
+      return;
+    }
+
     if (error.message === 'INSUFFICIENT_CREDITS') {
       return res.status(403).json({
         message:
