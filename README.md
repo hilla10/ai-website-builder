@@ -397,7 +397,7 @@ Ideas, not implemented features:
 
 ## License
 
-The project information identifies MIT as the intended license, `LICENSE` file. Add the MIT license text before distributing the repository as an MIT-licensed project. The `server/package.json` license field is package metadata and does not substitute for a repository license.
+This project is licensed under the [MIT License](LICENSE). The `server/package.json` license field is package metadata; the root `LICENSE` file contains the repository's license terms.
 
 ## Author and acknowledgments
 
