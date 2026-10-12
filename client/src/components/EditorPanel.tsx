@@ -119,7 +119,7 @@ const EditorPanel = ({
         <div className='grid grid-cols-2 gap3'>
           <div>
             <label className='block text-xs font-medium text-gray-500 mb-1'>
-              Font Size
+              Background Color
             </label>
             <div className='flex items-center gap-2 border border-gray-400 rounded-md p-1'>
               <input

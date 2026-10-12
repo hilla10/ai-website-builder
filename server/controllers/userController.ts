@@ -98,7 +98,7 @@ export const createUserProject = async (req: Request, res: Response) => {
 
       await tx.conversation.create({
         data: {
-          role: 'user',
+          role: 'user' as const,
           content: initial_prompt,
           projectId: project.id,
         },
@@ -115,10 +115,10 @@ export const createUserProject = async (req: Request, res: Response) => {
 
     // Enhance user prompt
     const promptEnhanceResponse = await openai.chat.completions.create({
-      model: 'apodex/apodex-1.1-mini:free',
+      model: 'nvidia/nemotron-3-ultra-550b-a55b:free',
       messages: [
         {
-          role: 'system',
+          role: 'system' as const,
           content: `You are a prompt enhancement specialist. Take the user's website request and expand it into a detailed, comprehensive prompt that will help create the best possible website.
 
           Enhance this prompt by:
@@ -132,7 +132,7 @@ export const createUserProject = async (req: Request, res: Response) => {
           Return ONLY the enhanced prompt, nothing else. Make it detailed but concise (2-3 paragraphs max).`,
         },
         {
-          role: 'user',
+          role: 'user' as const,
           content: initial_prompt,
         },
       ],
@@ -142,7 +142,7 @@ export const createUserProject = async (req: Request, res: Response) => {
 
     await prisma.conversation.create({
       data: {
-        role: 'assistant',
+        role: 'assistant' as const,
         content: `I've enhanced your prompt to: "${enhancedPrompt}"`,
         projectId: project.id,
       },
@@ -150,7 +150,7 @@ export const createUserProject = async (req: Request, res: Response) => {
 
     await prisma.conversation.create({
       data: {
-        role: 'assistant',
+        role: 'assistant' as const,
         content: 'Now Generating your Website...',
         projectId: project.id,
       },
@@ -158,10 +158,10 @@ export const createUserProject = async (req: Request, res: Response) => {
 
     // Generate website code
     const codeGenerationResponse = await openai.chat.completions.create({
-      model: 'apodex/apodex-1.1-mini:free',
+      model: 'nvidia/nemotron-3-ultra-550b-a55b:free',
       messages: [
         {
-          role: 'system',
+          role: 'system' as const,
           content: ` You are an expert web developer. Create a complete, production-ready, single-page website based on this request: "${enhancedPrompt}"
 
     CRITICAL REQUIREMENTS:
@@ -188,7 +188,7 @@ export const createUserProject = async (req: Request, res: Response) => {
     The HTML should be complete and ready to render as-is with Tailwind CSS. `,
         },
         {
-          role: 'user',
+          role: 'user' as const,
           content: enhancedPrompt || '',
         },
       ],
@@ -209,7 +209,7 @@ export const createUserProject = async (req: Request, res: Response) => {
     if (!code) {
       await prisma.conversation.create({
         data: {
-          role: 'assistant',
+          role: 'assistant' as const,
           content:
             "I'm sorry, but I couldn't generate the updated code. Please try again with a different prompt.",
           projectId: project.id,
@@ -237,7 +237,7 @@ export const createUserProject = async (req: Request, res: Response) => {
 
     await prisma.conversation.create({
       data: {
-        role: 'assistant',
+        role: 'assistant' as const,
         content:
           "I've created your website! You can now preview it and request any changes.",
         projectId: project.id,

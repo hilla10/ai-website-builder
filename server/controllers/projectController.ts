@@ -69,7 +69,7 @@ export const makeRevision = async (req: Request, res: Response) => {
 
       await tx.conversation.create({
         data: {
-          role: 'user',
+          role: 'user' as const,
           content: message,
           projectId,
         },
@@ -80,10 +80,10 @@ export const makeRevision = async (req: Request, res: Response) => {
 
     //   Enhance user prompt
     const promptEnhanceResponse = await openai.chat.completions.create({
-      model: 'apodex/apodex-1.1-mini:free:free',
+      model: 'nvidia/nemotron-3-ultra-550b-a55b:free',
       messages: [
         {
-          role: 'system',
+          role: 'system' as const,
           content: `You are a prompt enhancement specialist. The user wants to make changes to their website. Enhance their request to be more specific and actionable for a web developer.
 
         Enhance this by:
@@ -95,7 +95,7 @@ export const makeRevision = async (req: Request, res: Response) => {
         Return ONLY the enhanced request, nothing else. Keep it concise (1-2 sentences).`,
         },
         {
-          role: 'user',
+          role: 'user' as const,
           content: `User's request: ${message}`,
         },
       ],
@@ -105,7 +105,7 @@ export const makeRevision = async (req: Request, res: Response) => {
 
     await prisma.conversation.create({
       data: {
-        role: 'assistant',
+        role: 'assistant' as const,
         content: `I've enhanced your prompt to: "${enhancedPrompt}"`,
         projectId,
       },
@@ -113,7 +113,7 @@ export const makeRevision = async (req: Request, res: Response) => {
 
     await prisma.conversation.create({
       data: {
-        role: 'assistant',
+        role: 'assistant' as const,
         content: 'Now making changes to your website..',
         projectId,
       },
@@ -121,10 +121,10 @@ export const makeRevision = async (req: Request, res: Response) => {
 
     //   Generate website code
     const codeGenerationsResponse = await openai.chat.completions.create({
-      model: 'apodex/apodex-1.1-mini:free:free',
+      model: 'nvidia/nemotron-3-ultra-550b-a55b:free',
       messages: [
         {
-          role: 'system',
+          role: 'system' as const,
           content: `
 You are an expert web developer. 
 
@@ -139,7 +139,7 @@ You are an expert web developer.
     Apply the requested changes while maintaining the Tailwind CSS styling approach.`,
         },
         {
-          role: 'user',
+          role: 'user' as const,
           content: `Here is the current website code: "${currentProject.current_code}" The user wants this changes: "${enhancedPrompt} "`,
         },
       ],
@@ -160,7 +160,7 @@ You are an expert web developer.
     if (!code) {
       await prisma.conversation.create({
         data: {
-          role: 'assistant',
+          role: 'assistant' as const,
           content:
             "I'm sorry, but I couldn't generate the updated code. Please try again with a different prompt.",
           projectId,
@@ -187,7 +187,7 @@ You are an expert web developer.
 
     await prisma.conversation.create({
       data: {
-        role: 'assistant',
+        role: 'assistant' as const,
         content:
           "I've made the changes to your website! You can now preview it.",
         projectId,
@@ -278,7 +278,7 @@ export const rollbackToVersion = async (req: Request, res: Response) => {
 
     await prisma.conversation.create({
       data: {
-        role: 'assistant',
+        role: 'assistant' as const,
         content:
           "I've rolled back your website to selected version. You can not preview it.",
         projectId,
