@@ -59,7 +59,7 @@ Try the [live demo](https://ai-website-builder-nine-self.vercel.app/). The paths
 | Screen          | Placeholder                                                                |
 | --------------- | -------------------------------------------------------------------------- |
 | Landing page    | ![Landing page screenshot placeholder](docs/images/landing-page.png)       |
-| projects        | ![Projects screenshot placeholder](docs/images/dashboard.png)              |
+| projects        | ![Projects screenshot placeholder](docs/images/project.png)              |
 | AI generation   | ![AI generation screenshot placeholder](docs/images/ai-generation.png)     |
 | Website preview | ![Website preview screenshot placeholder](docs/images/website-preview.png) |
 | Project editor  | ![Project editor screenshot placeholder](docs/images/project-editor.png)   |
