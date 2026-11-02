@@ -18,7 +18,7 @@
     "@tailwindcss/vite": "^4.3.3",
     "@tanstack/react-form": "^1.33.5",
     "axios": "^1.20.0",
-    "better-auth": "^1.7.3",
+    "better-auth": "^1.7.15",
     "class-variance-authority": "^0.7.1",
     "cn": "^0.2.6",
     "date-fns": "^4.4.0",
